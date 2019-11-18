@@ -75,6 +75,18 @@ pixInfo(PIX *pix, const char *msg) {
           pix->w, pix->h, pix->d, pix->xres, pix->yres, pix->refcount);
 }
 
+static void
+dumpPix(PIX *pix, const char *prefix, int pageno) {
+    if (verbose) {
+        char *filename;
+        asprintf(&filename, "%04d.%s.png", pageno, prefix);
+        pixWrite(filename, pix, IFF_PNG);
+        pixInfo(pix, filename);
+        free(filename);
+        sleep(1);
+    }
+}
+
 #ifdef WIN32
 // -----------------------------------------------------------------------------
 // Windows, sadly, lacks asprintf
@@ -117,14 +129,21 @@ static const char *segment_dilation_sequence = "d3.3";
 //
 // Thanks to Dan Bloomberg for this
 // -----------------------------------------------------------------------------
-
 static PIX*
 segment_image(PIX *pixb, PIX *piximg, int pageno) {
   // Make seed and mask, and fill seed into mask
+  dumpPix(pixb, "pixb.segment", pageno);
+  dumpPix(piximg, "piximg.segment", pageno);
+  
   PIX *pixmask4 = pixMorphSequence(pixb, (char *)segment_mask_sequence, 0);
   PIX *pixseed4 = pixMorphSequence(pixb, (char *)segment_seed_sequence, 0);
   PIX *pixsf4 = pixSeedfillBinary(NULL, pixseed4, pixmask4, 8);
   PIX *pixd4 = pixMorphSequence(pixsf4, (char *)segment_dilation_sequence, 0);
+
+  dumpPix(pixmask4, "pixmask4.segment", pageno);
+  dumpPix(pixseed4, "pixseed4.segment", pageno);
+  dumpPix(pixsf4, "pixsf4.segment", pageno);
+  dumpPix(pixd4, "pixd4.segment", pageno);
 
   // we want to force the binary mask to be the same size as the
   // input color image, so we have to do it this way...
@@ -173,29 +192,17 @@ segment_image(PIX *pixb, PIX *piximg, int pageno) {
       //   pixInfo(pixmaskabc, "pixmaskabc  : ");
   }
 
+
   pixDestroy(&pixd4);
   pixDestroy(&pixsf4);
   pixDestroy(&pixseed4);
   pixDestroy(&pixmask4);
 
-  {
-    char *filename;
-    asprintf(&filename, "%s.%04d.png", "pixb.segment", pageno);
-    pixWrite(filename, pixb, IFF_PNG);
-    free(filename);
-
-    asprintf(&filename, "%s.%04d.png", "pixd.segment", pageno);
-    pixWrite(filename, pixd, IFF_PNG);
-    free(filename);
-  }
+  dumpPix(pixb, "pixb.segment", pageno);
+  dumpPix(pixd, "pixd.segment", pageno);
 
   pixSubtract(pixb, pixb, pixd);
-  {
-      char *filename;
-      asprintf(&filename, "%s.%04d.png", "pixb-pixd.segment", pageno);
-      pixWrite(filename, pixb, IFF_PNG);
-      free(filename);
-  }
+  dumpPix(pixb, "pixb-pixd.segment", pageno);
 
     // now see what we got from the segmentation
     static l_int32 *tab = NULL;
@@ -248,27 +255,17 @@ segment_image(PIX *pixb, PIX *piximg, int pageno) {
     } else {
         static const char *segment_close_sequence = "e3.3";
         PIX *pixbc = pixMorphSequence(pixb, (char *)segment_close_sequence, 0);
-        {
-            char *filename;
-            asprintf(&filename, "%s.%04d.png", "pixbc.segment", pageno);
-            pixWrite(filename, pixbc, IFF_PNG);
-            free(filename);
-        }
+        dumpPix(pixbc, "pixbc.segment", pageno);
 
         PIX *pixb1;
         if (piximg1->d == 32) {
             pixb1 = pixConvertTo32(pixbc);
-        } else if (piximg1->d == 8){
+        } else if (piximg1->d == 8) {
             pixb1 = pixConvertTo8(pixbc, FALSE);
-        } else{
+        } else {
             pixb1 = pixClone(pixbc);
         }
-        {
-            char *filename;
-            asprintf(&filename, "%s.%04d.png", "pixb111.segment", pageno);
-            pixWrite(filename, pixb1, IFF_PNG);
-            free(filename);
-        }
+        dumpPix(pixb1, "pixb111.segment", pageno);
         pixInfo(pixb1, "pixb1 (before):");
         // pixRasteropFullImage(pixb1, piximg1, PIX_NOT(PIX_XOR));
         pixRasteropFullImage(pixb1, piximg1, PIX_SRC | PIX_DST);
@@ -284,6 +281,7 @@ segment_image(PIX *pixb, PIX *piximg, int pageno) {
 
     return pixd1;
 }
+
 
 int
 main(int argc, char **argv) {
@@ -450,7 +448,13 @@ main(int argc, char **argv) {
       while (i < argc) {
         if (pageno >= 0) {
             // break;
-            sleep(1);
+            int ticks = 3;
+            fprintf(stderr, "sleeping for %d - ", ticks);
+            for (int k = 0; k < ticks; k++) {
+                sleep(1);
+                fprintf(stderr, "%d ", k);
+            }
+            fprintf(stderr, "\n");
         }
         if (subimage == numsubimages) {
             subimage = numsubimages = 0;
@@ -520,15 +524,8 @@ main(int argc, char **argv) {
             pixInfo(pixt, "thresholded image:");
         }
 
-        if (output_threshold) {
-            char *filename;
-            asprintf(&filename, "%s.%04d.png", output_threshold, pageno);
-            pixWrite(filename, pixt, IFF_PNG);
-            free(filename);
-            asprintf(&filename, "%s.%04d.png", "pixl.before", pageno);
-            pixWrite(filename, pixl, IFF_PNG);
-            free(filename);
-        }
+        dumpPix(pixt, "pixt.before", pageno);
+        dumpPix(pixl, "pixl.before", pageno);
 
         fprintf(stderr, "pixl->d=%d\n", pixl->d);
         if (segment && pixl->d > 1) {
@@ -543,19 +540,12 @@ main(int argc, char **argv) {
                 asprintf(&filename, "%s.%04d.%s", basename, pageno, img_ext);
                 pixWrite(filename, graphics, img_fmt);
                 free(filename);
-                if (verbose) {
-                    asprintf(&filename, "%s.%04d.%s", "pixt.after", pageno, img_ext);
-                    pixWrite(filename, pixt, img_fmt);
-                    free(filename);
-
-                    char *filename;
-                    asprintf(&filename, "%s.%04d.%s", "pixl.after", pageno, img_ext);
-                    pixWrite(filename, pixl, img_fmt);
-                    free(filename);
-                }
             } else if (verbose) {
                 fprintf(stderr, "%s: no graphics found in input image\n", argv[i]);
             }
+            dumpPix(pixt, "pixt.after", pageno);
+            dumpPix(pixl, "pixl.after", pageno);
+
             if (!pixt) {
                 fprintf(stderr, "%s: no text portion found in input image\n", argv[i]);
                 i++;
