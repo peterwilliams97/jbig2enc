@@ -134,7 +134,7 @@ segment_image(PIX *pixb, PIX *piximg, int pageno) {
   // Make seed and mask, and fill seed into mask
   dumpPix(pixb, "pixb.segment", pageno);
   dumpPix(piximg, "piximg.segment", pageno);
-  
+
   PIX *pixmask4 = pixMorphSequence(pixb, (char *)segment_mask_sequence, 0);
   PIX *pixseed4 = pixMorphSequence(pixb, (char *)segment_seed_sequence, 0);
   PIX *pixsf4 = pixSeedfillBinary(NULL, pixseed4, pixmask4, 8);
@@ -445,7 +445,7 @@ main(int argc, char **argv) {
     int pageno = -1;
 
     int numsubimages = 0, subimage = 0, num_pages = 0;
-      while (i < argc) {
+    while (i < argc) {
         if (pageno >= 0) {
             // break;
             int ticks = 3;
@@ -506,8 +506,11 @@ main(int argc, char **argv) {
                 if (!gray) {
                     return 1;
                 }
-            } else {
+            } else if (pixl->d == 4 || pixl->d == 8) {
                 gray = pixClone(pixl);
+            } else {
+                fprintf(stderr, "Unsupported input image depth: %d\n", pixl->d);
+                return 1;
             }
             if (up2) {
                 pixt = pixScaleGray2xLIThresh(gray, bw_threshold);
@@ -519,6 +522,10 @@ main(int argc, char **argv) {
             pixDestroy(&gray);
         } else {
             pixt = pixClone(pixl);
+        }
+        if (!pixt) {
+            fprintf(stderr, "Failed to convert input image to binary\n");
+            return 1;
         }
         if (verbose) {
             pixInfo(pixt, "thresholded image:");
