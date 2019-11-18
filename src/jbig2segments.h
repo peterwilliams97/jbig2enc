@@ -66,8 +66,8 @@ __attribute__((packed));
 // out internally.
 // -----------------------------------------------------------------------------
 struct Segment {
-  unsigned number;  // segment number
-  int type;  // segment type (see enum in jbig2structs.h)
+  unsigned number;          // segment number
+  int type;                 // segment type (see enum in jbig2structs.h)
   int deferred_non_retain;  // see JBIG2 spec
   int retain_bits;
   std::vector<unsigned> referred_to;  // list of segment numbers referred to
@@ -96,7 +96,6 @@ struct Segment {
     } else {
       refsize = 4;
     }
-
     return refsize;
   }
 

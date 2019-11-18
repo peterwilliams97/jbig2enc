@@ -82,7 +82,7 @@ class WidthSorter {  // concept: stl/StrictWeakOrdering
 
 static const int kBorderSize = 6;
 
-// see comment in .h file
+// see comment in .h file  !@#$
 void
 jbig2enc_symboltable(struct jbig2enc_ctx *restrict ctx,
                      PIXA *restrict const symbols,
@@ -118,7 +118,9 @@ jbig2enc_symboltable(struct jbig2enc_ctx *restrict ctx,
     hc.push_back(syms[i]);  // this is the first member of the new class
     // walk the vector until we find a symbol with a different height
     for (j = i + 1; j < n; ++j) {
-      if (S(syms[j])->h - (unborder_symbols ? 2*kBorderSize : 0) != height) break;
+      if (S(syms[j])->h - (unborder_symbols ? 2*kBorderSize : 0) != height) {
+        break;
+      }
       hc.push_back(syms[j]);  // add each symbol of the same height to the class
     }
 #ifdef JBIG2_DEBUGGING
@@ -153,8 +155,7 @@ jbig2enc_symboltable(struct jbig2enc_ctx *restrict ctx,
         unbordered = pixClone(S(sym));
       }
       pixSetPadBits(unbordered, 0);
-      jbig2enc_bitimage(ctx, (uint8_t *) unbordered->data, thissymwidth, height,
-                        false);
+      jbig2enc_bitimage(ctx, (uint8_t *) unbordered->data, thissymwidth, height, false);
       // add this symbol to the map
       (*symmap)[sym] = number++;
       pixDestroy(&unbordered);
@@ -221,23 +222,21 @@ jbig2enc_textregion(struct jbig2enc_ctx *restrict ctx,
                     PIXA *const source, BOXA *boxes, int baseindex,
                     int refine_level, bool unborder_symbols) {
   // these are the only valid values for stripwidth
-  if (stripwidth != 1 && stripwidth != 2 && stripwidth != 4 &&
-      stripwidth != 8) {
+  if (stripwidth != 1 && stripwidth != 2 && stripwidth != 4 && stripwidth != 8) {
     abort();
   }
 
   PTA *ll;
 
-  // In the case of refinement, we have to put the symbols where the original
-  // boxes were. So we make up an array of lower-left (ll) points from the
+  // In the case of refinement, we have to put the symbols where the original boxes were. So we
+  // make up an array of lower-left (ll) points from the
   // boxes. Otherwise we take the points from the in_ll array we were given.
   // However, the in_ll array is absolutely indexed and the boxes array is
   // relative to this page so watch out below.
   if (source) {
     ll = ptaCreate(0);
     for (int i = 0; i < boxes->n; ++i) {
-      ptaAddPt(ll, boxes->box[i]->x,
-               boxes->box[i]->y + boxes->box[i]->h - 1);
+      ptaAddPt(ll, boxes->box[i]->x, boxes->box[i]->y + boxes->box[i]->h - 1);
     }
   } else {
     // if we aren't doing refinement - we just put the symbols where they
@@ -271,7 +270,7 @@ jbig2enc_textregion(struct jbig2enc_ctx *restrict ctx,
   int firsts = 0;
   int wibble = 0;
   // this is the initial stript value. I don't see why encoding this as zero,
-  // then encoding the first stript value as the real start is any worst than
+  // then encoding the first stript value as the real start is any worse than
   // encoding this value correctly and then having a 0 value for the first
   // deltat
   jbig2enc_int(ctx, JBIG2_IADT, 0);
@@ -335,8 +334,7 @@ jbig2enc_textregion(struct jbig2enc_ctx *restrict ctx,
       // are doing refinement (source != NULL) then the symbol number is
       // relative to this page, so we have to add the baseindex to get an
       // absolute index.
-      const int assigned = (int)assignments->array
-        [sym + (source ? baseindex : 0)];
+      const int assigned = (int)assignments->array[sym + (source ? baseindex : 0)];
 
       // the symmap maps the number of the symbol from the classifier to the
       // order in while it was written in the symbol dict
@@ -369,8 +367,7 @@ jbig2enc_textregion(struct jbig2enc_ctx *restrict ctx,
       // refinement is enabled if the original source components are given
       if (source) {
         // the boxes array is indexed by the number of the symbol on this page.
-        // So we subtract the number of the first symbol to get this relative
-        // number.
+        // So we subtract the number of the first symbol to get this relative number.
         const int abssym = baseindex + sym;
 
         PIX *symbol;

@@ -162,7 +162,7 @@ def main(symboltable='symboltable', pagefiles=glob.glob('page-*')):
     pages.d.d['Count'] = str(len(page_objs))
     pages.d.d['Kids'] = '[' + ' '.join([ref(x.id) for x in page_objs]) + ']'
 
-  print str(doc)
+  print(doc)
 
 
 def usage(script, msg):

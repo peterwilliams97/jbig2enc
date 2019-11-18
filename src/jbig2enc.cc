@@ -53,11 +53,9 @@ char const *getVersion() {
 // -----------------------------------------------------------------------------
 // Removes spots which are less than size x size pixels
 //
-// Note, this has a side-effect of removing a few pixels
-// that from components you want to keep.
+// Note, this has a side-effect of removing a few pixels that from components you want to keep.
 //
-// If that's a problem, you do a binary reconstruction
-// (from seedfill.c):
+// If that's a problem, you do a binary reconstruction (from seedfill.c):
 // -----------------------------------------------------------------------------
 static PIX *
 remove_flyspecks(PIX *const source, const int size) {
@@ -93,11 +91,11 @@ log2up(int v) {
 // -----------------------------------------------------------------------------
 struct jbig2ctx {
   struct JbClasser *classer;  // the leptonica classifier
-  int xres, yres;  // ppi for the X and Y direction
-  bool full_headers;  // true if we are producing a full JBIG2 file
-  bool pdf_page_numbering;  // true if all text pages are page "1" (pdf mode)
-  int segnum;  // current segment number
-  int symtab_segment;  // the segment number of the symbol table
+  int xres, yres;             // ppi for the X and Y direction
+  bool full_headers;          // true if we are producing a full JBIG2 file
+  bool pdf_page_numbering;    // true if all text pages are page "1" (pdf mode)
+  int segnum;                 // current segment number
+  int symtab_segment;         // the segment number of the symbol table
   // a map from page number a list of components for that page
   std::map<int, std::vector<int> > pagecomps;
   // for each page, the list of symbols which are only used on that page
@@ -106,21 +104,19 @@ struct jbig2ctx {
   int num_global_symbols;
   std::vector<int> page_xres, page_yres;
   std::vector<int> page_width, page_height;
-  // Used to store the mapping from symbol number to the index in the global
-  // symbol dictionary.
+  // Used to store the mapping from symbol number to the index in the global symbol dictionary.
   std::map<int, int> symmap;
   bool refinement;
   PIXA *avg_templates;  // grayed templates
   int refine_level;
   // only used when using refinement
-    // the number of the first symbol of each page
-    std::vector<int> baseindexes;
+  // the number of the first symbol of each page
+  std::vector<int> baseindexes;
 };
 
 // see comments in .h file
 struct jbig2ctx *
-jbig2_init(float thresh, float weight, int xres, int yres, bool full_headers,
-           int refine_level) {
+jbig2_init(float thresh, float weight, int xres, int yres, bool full_headers, int refine_level) {
   struct jbig2ctx *ctx = new jbig2ctx;
   ctx->xres = xres;
   ctx->yres = yres;
@@ -132,8 +128,7 @@ jbig2_init(float thresh, float weight, int xres, int yres, bool full_headers,
   ctx->refine_level = refine_level;
   ctx->avg_templates = NULL;
 
-  ctx->classer = jbCorrelationInitWithoutComponents(JB_CONN_COMPS, 9999, 9999,
-                                                    thresh, weight);
+  ctx->classer = jbCorrelationInitWithoutComponents(JB_CONN_COMPS, 9999, 9999, thresh, weight);
 
   return ctx;
 }
@@ -149,8 +144,7 @@ print_list(std::list<int> &l) {
 #endif
 
 // -----------------------------------------------------------------------------
-// unite_templates unites templates of the same character to chosen charater
-// template
+// unite_templates unites templates of the same character to chosen charater template
 //
 //   ctx: structure containing templates of symbols.
 //   target_char: char that will remain (united char will be replaced by this
@@ -206,7 +200,8 @@ unite_templates(struct jbig2ctx *ctx,
         numaSetValue(ctx->classer->naclass, i, new_representant);
       }
     }
-    pixChangeRefcount(ctx->classer->pixat->pix[new_representant],pixGetRefcount(ctx->classer->pixat->pix[second_template]));
+    pixChangeRefcount(ctx->classer->pixat->pix[new_representant],
+       pixGetRefcount(ctx->classer->pixat->pix[second_template]));
   }
   return 0;
 }
@@ -356,8 +351,7 @@ jbig2enc_auto_threshold(struct jbig2ctx *ctx) {
   for (int i = 0; i < pixaGetCount(pixa); i++) {
     PIX *pix = pixa->pix[i];
 
-    // The code only looks forward because jbig2enc_are_equivalent is
-    // symmetric.
+    // The code only looks forward because jbig2enc_are_equivalent is symmetric.
     for (int j = i+1; j < pixaGetCount(pixa); j++) {
       if (jbig2enc_are_equivalent(pix, pixa->pix[j])) {
         unite_templates_with_indexes(ctx, i, j);
@@ -434,14 +428,14 @@ jbig2enc_auto_threshold_using_hash(struct jbig2ctx *ctx) {
     print_hash_map(hashed_templates);
   #endif
 
-  // new_representant maps from a symbol to the list of symbols that should be
-  // replaced by it.
-  std::map<unsigned int, std::list<int> > new_representants;
+    // new_representants maps from a symbol to the list of symbols that should be
+    // replaced by it.
+    std::map<unsigned int, std::list<int> > new_representants;
 
-  // going through representants with the same hash
-  std::map<unsigned int, std::list<int> >::iterator it;
-  std::list<int>::iterator first_template_it;
-  std::list<int>::iterator second_template_it;
+    // going through representants with the same hash
+    std::map<unsigned int, std::list<int> >::iterator it;
+    std::list<int>::iterator first_template_it;
+    std::list<int>::iterator second_template_it;
 
   for (it = hashed_templates.begin(); it != hashed_templates.end(); it++) {
     // compare all the templates with same hash.
@@ -521,11 +515,11 @@ jbig2_add_page(struct jbig2ctx *ctx, struct Pix *input) {
   pixDestroy(&bw);
 }
 
-#define F(x) memcpy(ret + offset, &x, sizeof(x)) ; offset += sizeof(x)
-#define G(x, y) memcpy(ret + offset, x, y); offset += y;
-#define SEGMENT(x) x.write(ret + offset); offset += x.size();
+#define F(x)       memcpy(ret + offset, &x, sizeof(x)); offset += sizeof(x)
+#define G(x, y)    memcpy(ret + offset, x, y);          offset += y;
+#define SEGMENT(x) x.write(ret + offset);               offset += x.size();
 
-// see comments in .h file
+// see comments in .h file !@#$
 uint8_t *
 jbig2_pages_complete(struct jbig2ctx *ctx, int *const length) {
   /*
@@ -534,35 +528,37 @@ jbig2_pages_complete(struct jbig2ctx *ctx, int *const length) {
      above pick-the-first. Also, aligning the gray glyphs requires the
      original source image.
 
-     Remember that you need the Init without WithoutComponents to use this */
+     Remember that you need the Init without WithoutComponents to use this
+   */
 
+  /*
+    NUMA *samples_per_composition;
+    PTA *grayed_centroids;
+    PIXA *grayed;
 
-  /*NUMA *samples_per_composition;
-  PTA *grayed_centroids;
-  PIXA *grayed;
+    grayed = jbAccumulateComposites(ctx->classer->pixaa, &samples_per_composition,
+                                    &grayed_centroids);
 
-  grayed = jbAccumulateComposites(ctx->classer->pixaa, &samples_per_composition,
-                                  &grayed_centroids);
+    if (!grayed || grayed->n != ctx->classer->pixaa->n) {
+        fprintf(stderr, "Graying failed\n");
+        return NULL;
+    }
 
-  if (!grayed || grayed->n != ctx->classer->pixaa->n) {
-    fprintf(stderr, "Graying failed\n");
-    return NULL;
-  }
+    ctx->avg_templates = pixaCreate(0);
+    for (int i = 0; i < grayed->n; ++i) {
+        int samples;
+        numaGetIValue(samples_per_composition, i, &samples);
+        PIX *avg = pixFinalAccumulateThreshold(grayed->pix[i], 0,
+                                            (samples + 1) >> 1);
+        pixaAddPix(ctx->avg_templates, avg, L_INSERT);
+        //char b[512];
+        //sprintf(b, "gray-%d/th.png", i);
+        //pixWrite(b, avg, IFF_PNG);
+    }
 
-  ctx->avg_templates = pixaCreate(0);
-  for (int i = 0; i < grayed->n; ++i) {
-    int samples;
-    numaGetIValue(samples_per_composition, i, &samples);
-    PIX *avg = pixFinalAccumulateThreshold(grayed->pix[i], 0,
-                                           (samples + 1) >> 1);
-    pixaAddPix(ctx->avg_templates, avg, L_INSERT);
-    //char b[512];
-    //sprintf(b, "gray-%d/th.png", i);
-    //pixWrite(b, avg, IFF_PNG);
-  }
-
-  pixaDestroy(&grayed);
-  numaDestroy(&samples_per_composition);*/
+    pixaDestroy(&grayed);
+    numaDestroy(&samples_per_composition);
+  */
 
   // We find the symbols which only appear on a single page and encode them in
   // a symbol dictionary just for that page. This is because we want to keep
@@ -576,8 +572,8 @@ jbig2_pages_complete(struct jbig2ctx *ctx, int *const length) {
   const bool single_page = ctx->classer->npages == 1;
 
   // maps symbol number to the number of times it has been used
-  // pixat->n is the number of symbols
-  // naclass->n is the number of connected components
+  // pixat->n: the number of symbols
+  // naclass->n: the number of connected components
 
   std::vector<unsigned> symbol_used(ctx->classer->pixat->n);
   for (int i = 0; i < ctx->classer->naclass->n; ++i) {
@@ -589,14 +585,16 @@ jbig2_pages_complete(struct jbig2ctx *ctx, int *const length) {
   // the multiuse symbols are the ones which go into the global dictionary
   std::vector<unsigned> multiuse_symbols;
   for (int i = 0; i < ctx->classer->pixat->n; ++i) {
-    if (symbol_used[i] == 0) abort();
-    if (symbol_used[i] > 1 || single_page) multiuse_symbols.push_back(i);
+    if (symbol_used[i] == 0) {abort();}
+    if (symbol_used[i] > 1 || single_page) {
+        multiuse_symbols.push_back(i);
+    }
   }
   ctx->num_global_symbols = multiuse_symbols.size();
 
-  // build the pagecomps map: a map from page number to the list of connected
-  // components for that page. The classer gives us an array from connected
-  // component number to page number - we just have to reverse it
+  // build the pagecomps map: a map from page number to the list of connected components for that page.
+  // The classer gives us an array from connected component number to page number - we just have to
+  // reverse it
   for (int i = 0; i < ctx->classer->napage->n; ++i) {
     int page_num;
     numaGetIValue(ctx->classer->napage, i, &page_num);
@@ -672,8 +670,8 @@ jbig2_pages_complete(struct jbig2ctx *ctx, int *const length) {
   struct jbig2_symbol_dict symtab;
   memset(&symtab, 0, sizeof(symtab));
 
-  jbig2enc_symboltable
-    (&ectx, ctx->avg_templates ? ctx->avg_templates : ctx->classer->pixat,
+  jbig2enc_symboltable(
+     &ectx, ctx->avg_templates ? ctx->avg_templates : ctx->classer->pixat,
      &multiuse_symbols, &ctx->symmap, ctx->avg_templates == NULL);
   const int symdatasize = jbig2enc_datasize(&ectx);
 
@@ -740,6 +738,8 @@ jbig2_produce_page(struct jbig2ctx *ctx, int page_no,
   seg.type = segment_page_information;
   seg.page = ctx->pdf_page_numbering ? 1 : 1 + page_no;
   seg.len = sizeof(struct jbig2_page_info);
+
+  // width, height, xres, yres = struct.unpack('>IIII', contents[11:27])
   pageinfo.width = htonl(ctx->page_width[page_no]);
   pageinfo.height = htonl(ctx->page_height[page_no]);
   pageinfo.xres = htonl(xres == -1 ? ctx->page_xres[page_no] : xres );
@@ -747,8 +747,7 @@ jbig2_produce_page(struct jbig2ctx *ctx, int page_no,
   pageinfo.is_lossless = ctx->refinement;
 
   std::map<int, int> second_symbol_map;
-  // If we have single-use symbols on this page we make a new symbol table
-  // containing just them.
+  // If we have single-use symbols on this page we make a new symbol table containing just them.
   const bool extrasymtab = ctx->single_use_symbols[page_no].size() > 0;
   struct jbig2enc_ctx extrasymtab_ctx;
 
@@ -761,8 +760,8 @@ jbig2_produce_page(struct jbig2ctx *ctx, int page_no,
     symseg.type = segment_symbol_table;
     symseg.page = ctx->pdf_page_numbering ? 1 : 1 + page_no;
 
-    jbig2enc_symboltable
-      (&extrasymtab_ctx,
+    jbig2enc_symboltable(
+       &extrasymtab_ctx,
        ctx->avg_templates ? ctx->avg_templates : ctx->classer->pixat,
        &ctx->single_use_symbols[page_no], &second_symbol_map,
        ctx->avg_templates == NULL);
@@ -876,7 +875,7 @@ jbig2_produce_page(struct jbig2ctx *ctx, int page_no,
   if (totalsize != offset) abort();
 
   jbig2enc_dealloc(&ectx);
-  if (extrasymtab) jbig2enc_dealloc(&extrasymtab_ctx);
+  if (extrasymtab) {jbig2enc_dealloc(&extrasymtab_ctx);}
 
   *length = offset;
   return ret;
@@ -892,7 +891,7 @@ jbig2_encode_generic(struct Pix *const bw, const bool full_headers, const int xr
                      int *const length) {
   int segnum = 0;
 
-  if (!bw) return NULL;
+  if (!bw) {return NULL;}
   pixSetPadBits(bw, 0);
 
   struct jbig2_file_header header;

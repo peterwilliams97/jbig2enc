@@ -21,8 +21,12 @@ in Acrobat, though it may well be.
 
 ## Usage
 
-See the `jbig2enc.h` header for the high level API, or the `jbig2` program for an
-example of usage:
+See the `jbig2enc.h` header for the high level API, or the `jbig2` program for an example of usage:
+
+-v verbose
+-s symbol_mode
+-p pdfmode
+-S segment
 
 ```
 $ jbig2 -s -p -v *.jpg && pdf.py output >out.pdf

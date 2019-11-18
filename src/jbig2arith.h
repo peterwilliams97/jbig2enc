@@ -55,8 +55,8 @@ struct jbig2enc_ctx {
 
   // This is a list of output chunks, not including the current one
   std::vector<uint8_t *> *output_chunks;
-  uint8_t *outbuf;  // this is the current output chunk
-  int outbuf_used;  // number of bytes used in outbuf
+  uint8_t *outbuf;          // this is the current output chunk
+  int outbuf_used;          // number of bytes used in outbuf
   uint8_t context[JBIG2_MAX_CTX];  // state machine context for encoding images
   uint8_t intctx[13][512];  // 512 bytes of context indexes for each of 13 different int decodings
                             // this data is also used for refinement coding
@@ -104,8 +104,7 @@ void jbig2enc_int(struct jbig2enc_ctx *__restrict__ ctx, int proc, int value);
 // -----------------------------------------------------------------------------
 // Encode an IAID number. This needs to know how many bits to use.
 // -----------------------------------------------------------------------------
-void jbig2enc_iaid(struct jbig2enc_ctx *__restrict__ ctx, int symcodelen,
-                   int value);
+void jbig2enc_iaid(struct jbig2enc_ctx *__restrict__ ctx, int symcodelen, int value);
 
 // -----------------------------------------------------------------------------
 // Encode the special out-of-bounds (-0) number for a given type. proc is one

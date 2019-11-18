@@ -94,19 +94,20 @@ void jbig2_destroy(struct jbig2ctx *);
 // bw: A 1-bpp image
 // -----------------------------------------------------------------------------
 void jbig2_add_page(struct jbig2ctx *ctx, struct Pix *bw);
+
 // -----------------------------------------------------------------------------
-// Finalise information about the document and encode the symbol table.
+// Finalise information about the document and encode the symbol table. !@#$
 //
 // WARNING: returns a malloced buffer which the caller must free
 // -----------------------------------------------------------------------------
 uint8_t *jbig2_pages_complete(struct jbig2ctx *ctx, int *const length);
+
 // -----------------------------------------------------------------------------
 // Encode a page.
 //
-// page_no: number of this page, indexed from 0. This *must* match the order of
-//          pages presented to jbig2_add_page.
-// xres, yres: if -1, use values given in _init. Otherwise, set the resolution
-//             for this page only
+// page_no: number of this page, indexed from 0. This *must* match the order of pages presented to
+//          jbig2_add_page.
+// xres, yres: if -1, use values given in _init. Otherwise, set the resolution for this page only
 //
 // WARNING: returns a malloced buffer which the caller must free
 // -----------------------------------------------------------------------------
@@ -122,14 +123,14 @@ uint8_t *jbig2_produce_page(struct jbig2ctx *ctx, int page_no, int xres,
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
-// Encode an image as a single generic region. This is lossless. It should not
-// be used for images as half-tone coding is not implemented.
+// Encode an image as a single generic region. This is lossless. It should not be used for images as
+// half-tone coding is not implemented.
 //
 // see argument comments for jbig2_init
 // duplicate_line_removal: turning this on
 //    * Breaks ghostscript
 //    * Takes ever so slightly more bytes to encode
-//    * Cuts the encode time by half
+//    * Cuts the encode time by half !@#$
 //
 // WARNING: returns a malloced buffer which the caller must free
 // -----------------------------------------------------------------------------

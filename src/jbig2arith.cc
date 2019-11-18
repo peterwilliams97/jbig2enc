@@ -506,7 +506,9 @@ jbig2enc_bitimage(struct jbig2enc_ctx *restrict ctx, const u8 *restrict idata,
     u32 w1, w2, w3;
     w1 = w2 = w3 = 0;
 
-    if (y >= 2) w1 = data[(y - 2) * words_per_row];
+    if (y >= 2) {
+        w1 = data[(y - 2) * words_per_row];
+    }
     if (y >= 1) {
       w2 = data[(y - 1) * words_per_row];
 
