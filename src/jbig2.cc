@@ -77,13 +77,17 @@ pixInfo(PIX *pix, const char *msg) {
 
 static void
 dumpPix(PIX *pix, const char *prefix, int pageno) {
-    if (verbose) {
+    if (verbose && pageno == 2) {
         char *filename;
-        asprintf(&filename, "%04d.%s.png", pageno, prefix);
+        if (true) {
+            asprintf(&filename, "%04d.%s.png", pageno, prefix);
+        } else {
+            asprintf(&filename, "%s.%04d.png", prefix, pageno );
+        }
         pixWrite(filename, pix, IFF_PNG);
         pixInfo(pix, filename);
         free(filename);
-        sleep(1);
+        // sleep(1);
     }
 }
 
@@ -117,92 +121,96 @@ static const char *segment_dilation_sequence = "d3.3";
 
 // -----------------------------------------------------------------------------
 // Takes two pix as input, generated from the same original image:
-//   1. pixb   - a binary thresholded image
+//   1. pixbin - a binary thresholded image
 //   2. piximg - a full color or grayscale image
 // and segments them by finding the areas that contain color or grayscale graphics, removing those
 // areas from the binary image, and doing the opposite for the full color/grayscale image.  The
 // upshot is that after this routine has been run, the binary image contains only text and the
 // full color image contains only the graphics.
 //
-// Both input images are modified by this procedure.  If no text is found, pixb is set to NULL.  If
+// Both input images are modified by this procedure.  If no text is found, pixbin is set to NULL.  If
 // no graphics is found, piximg is set to NULL.
 //
 // Thanks to Dan Bloomberg for this
 // -----------------------------------------------------------------------------
 static PIX*
-segment_image(PIX *pixb, PIX *piximg, int pageno) {
-  // Make seed and mask, and fill seed into mask
-  dumpPix(pixb, "pixb.segment", pageno);
-  dumpPix(piximg, "piximg.segment", pageno);
+segment_image(PIX *pixbin, PIX *piximg, int pageno) {
+    // Make seed and mask, and fill seed into mask
+    dumpPix(pixbin, "pixbin.segment", pageno);
+    dumpPix(piximg, "piximg.segment", pageno);
 
-  PIX *pixmask4 = pixMorphSequence(pixb, (char *)segment_mask_sequence, 0);
-  PIX *pixseed4 = pixMorphSequence(pixb, (char *)segment_seed_sequence, 0);
-  PIX *pixsf4 = pixSeedfillBinary(NULL, pixseed4, pixmask4, 8);
-  PIX *pixd4 = pixMorphSequence(pixsf4, (char *)segment_dilation_sequence, 0);
+    // Mask is graphics + text
+    PIX *pixmask4 = pixMorphSequence(pixbin, (char *)segment_mask_sequence, 0);
+    // Seed is graphics only
+    PIX *pixseed4 = pixMorphSequence(pixbin, (char *)segment_seed_sequence, 0);
+    // Fill is graphics with text foreground removed.
+    PIX *pixfill4 = pixSeedfillBinary(NULL, pixseed4, pixmask4, 8);
+    // Graf is graphics with text foreground removed and spread out for registration.
+    PIX *pixgraf4 = pixMorphSequence(pixfill4, (char *)segment_dilation_sequence, 0);
 
-  dumpPix(pixmask4, "pixmask4.segment", pageno);
-  dumpPix(pixseed4, "pixseed4.segment", pageno);
-  dumpPix(pixsf4, "pixsf4.segment", pageno);
-  dumpPix(pixd4, "pixd4.segment", pageno);
+    dumpPix(pixmask4, "pixmask4.segment", pageno);
+    dumpPix(pixseed4, "pixseed4.segment", pageno);
+    dumpPix(pixfill4, "pixfill4.segment", pageno);
+    dumpPix(pixgraf4, "pixgraf4.segment", pageno);
 
-  // we want to force the binary mask to be the same size as the
-  // input color image, so we have to do it this way...
-  // is there a better way?
-  // PIX *pixd = pixExpandBinary(pixd4, 4);
-  PIX *pixd;
+    // we want to force the binary mask to be the same size as the
+    // input color image, so we have to do it this way...
+    // is there a better way?
+    // PIX *pixgrf = pixExpandBinary(pixgraf4, 4);
+    PIX *pixgrf;
 #ifdef HAVE_EXPANDBINARYPOWER2LOW
-    pixd = pixCreate(piximg->w, piximg->h, 1);
-    pixCopyResolution(pixd, piximg);
-    expandBinaryPower2Low(pixd->data, pixd->w, pixd->h, pixd->wpl,
-                        pixd4->data, pixd4->w, pixd4->h, pixd4->wpl, 4);
+    pixgrf = pixCreate(piximg->w, piximg->h, 1);
+    pixCopyResolution(pixgrf, piximg);
+    expandBinaryPower2Low(pixgrf->data, pixgrf->w, pixgrf->h, pixgrf->wpl,
+                        pixgraf4->data, pixgraf4->w, pixgraf4->h, pixgraf4->wpl, 4);
 #else
-    pixd = pixExpandBinaryPower2(pixd4, 4);
+    pixgrf = pixExpandBinaryPower2(pixgraf4, 4);
 #endif
 
-  if (verbose) {
-      pixInfo(pixb,   "  pixb: ");
-      pixInfo(piximg, "piximg: ");
-      //   pixInfo(pixb,     "pixb      : ");
-      //   fprintf(stderr, "segment_mask_sequence = <%s>\n", (char *)segment_mask_sequence);
-      //   pixInfo(pixmask4, "pixmask4  : ");
-      //   fprintf(stderr, "segment_seed_sequence = <%s>\n", (char *)segment_seed_sequence);
-      //   pixInfo(pixseed4, "pixseed4  : ");
-      //   pixInfo(pixsf4,   "pixsf4    : ");
-      //   fprintf(stderr, "segment_dilation_sequence = <%s>\n", (char *)segment_dilation_sequence);
-      //   pixInfo(pixd4,    "pixd4     : ");
-      pixInfo(pixd, "mask image: ");
+    if (verbose) {
+        pixInfo(pixbin,   "  pixbin: ");
+        pixInfo(piximg, "piximg: ");
+        //   pixInfo(pixbin,     "pixbin      : ");
+        //   fprintf(stderr, "segment_mask_sequence = <%s>\n", (char *)segment_mask_sequence);
+        //   pixInfo(pixmask4, "pixmask4  : ");
+        //   fprintf(stderr, "segment_seed_sequence = <%s>\n", (char *)segment_seed_sequence);
+        //   pixInfo(pixseed4, "pixseed4  : ");
+        //   pixInfo(pixfill4,   "pixfill4    : ");
+        //   fprintf(stderr, "segment_dilation_sequence = <%s>\n", (char *)segment_dilation_sequence);
+        //   pixInfo(pixgraf4,    "pixgraf4     : ");
+        pixInfo(pixgrf, "mask image: ");
 
-      //   static const char *maska = "r1143";
-      //   static const char *maskb = "o4.4";
-      //   static const char *maskc = "x4";
-      //   static const char *maskabc = "r1143 + o4.4 + x4";
-      //   fprintf(stderr, "from pixb again ... \n");
-      //   PIX *pixmaska = pixMorphSequence(pixb, (char *)maska, 0);
-      //   fprintf(stderr, "maska = <%s>\n", maska);
-      //   pixInfo(pixmaska, "pixmaska  : ");
-      //   PIX *pixmaskb = pixMorphSequence(pixmaska, (char *)maskb, 0);
-      //   fprintf(stderr, "maskb = <%s>\n", maskb);
-      //   pixInfo(pixmaskb, "pixmaskb  : ");
-      //   PIX *pixmaskc = pixMorphSequence(pixmaskb, (char *)maskc, 0);
-      //   fprintf(stderr, "maskc = <%s>\n", maskc);
-      //   pixInfo(pixmaskc, "pixmaskc  : ");
-      //   fprintf(stderr, "^^^ from pixb again ... \n");
-      //   PIX *pixmaskabc = pixMorphSequence(pixb, (char *)maskabc, 0);
-      //   fprintf(stderr, "maskabc = <%s>\n", maskabc);
-      //   pixInfo(pixmaskabc, "pixmaskabc  : ");
-  }
+        //   static const char *maska = "r1143";
+        //   static const char *maskb = "o4.4";
+        //   static const char *maskc = "x4";
+        //   static const char *maskabc = "r1143 + o4.4 + x4";
+        //   fprintf(stderr, "from pixbin again ... \n");
+        //   PIX *pixmaska = pixMorphSequence(pixbin, (char *)maska, 0);
+        //   fprintf(stderr, "maska = <%s>\n", maska);
+        //   pixInfo(pixmaska, "pixmaska  : ");
+        //   PIX *pixmaskb = pixMorphSequence(pixmaska, (char *)maskb, 0);
+        //   fprintf(stderr, "maskb = <%s>\n", maskb);
+        //   pixInfo(pixmaskb, "pixmaskb  : ");
+        //   PIX *pixmaskc = pixMorphSequence(pixmaskb, (char *)maskc, 0);
+        //   fprintf(stderr, "maskc = <%s>\n", maskc);
+        //   pixInfo(pixmaskc, "pixmaskc  : ");
+        //   fprintf(stderr, "^^^ from pixbin again ... \n");
+        //   PIX *pixmaskabc = pixMorphSequence(pixbin, (char *)maskabc, 0);
+        //   fprintf(stderr, "maskabc = <%s>\n", maskabc);
+        //   pixInfo(pixmaskabc, "pixmaskabc  : ");
+    }
 
+    pixDestroy(&pixgraf4);
+    pixDestroy(&pixfill4);
+    pixDestroy(&pixseed4);
+    pixDestroy(&pixmask4);
 
-  pixDestroy(&pixd4);
-  pixDestroy(&pixsf4);
-  pixDestroy(&pixseed4);
-  pixDestroy(&pixmask4);
+    dumpPix(pixbin, "pixbin.segment", pageno);
+    dumpPix(pixgrf, "pixgrf.segment", pageno);
 
-  dumpPix(pixb, "pixb.segment", pageno);
-  dumpPix(pixd, "pixd.segment", pageno);
-
-  pixSubtract(pixb, pixb, pixd);
-  dumpPix(pixb, "pixb-pixd.segment", pageno);
+    // pixbin is now threshold with spread graphics removed.
+    pixSubtract(pixbin, pixbin, pixgrf);
+    dumpPix(pixbin, "pixbin-pixgrf.segment", pageno);
 
     // now see what we got from the segmentation
     static l_int32 *tab = NULL;
@@ -211,8 +219,8 @@ segment_image(PIX *pixb, PIX *piximg, int pageno) {
     }
     l_int32 pcountG;
     l_int32 pcountB;
-    pixCountPixels(pixd, &pcountG, tab);
-    pixCountPixels(pixb, &pcountB, tab);
+    pixCountPixels(pixgrf, &pcountG, tab);
+    pixCountPixels(pixbin, &pcountB, tab);
     if (verbose) {
         fprintf(stderr, "pixel count of graphics image: %u\n", pcountG);
         fprintf(stderr, "pixel count of   binary image: %u\n", pcountB);
@@ -220,13 +228,14 @@ segment_image(PIX *pixb, PIX *piximg, int pageno) {
 
     // if no image portion was found, set the image pointer to NULL and return
     if (pcountG < 100) {
-        pixDestroy(&pixd);
+        pixDestroy(&pixgrf);
         return NULL;
     }
     if (pcountB < 100){
-        pixDestroy(&pixb);
+        pixDestroy(&pixbin);
     }
 
+    // piximg1 is piximg
     PIX *piximg1;
     if (piximg->d == 1 || piximg->d == 8 || piximg->d == 32){
         piximg1 = pixClone(piximg);
@@ -236,25 +245,26 @@ segment_image(PIX *pixb, PIX *piximg, int pageno) {
         piximg1 = pixConvertTo8(piximg, FALSE);
     }
 
-    PIX *pixd1;
+    // pixgrf1 is pixgrf with piximg's color depth
+    PIX *pixgrf1;
     if (piximg1->d == 32) {
-        pixd1 = pixConvertTo32(pixd);
+        pixgrf1 = pixConvertTo32(pixgrf);
     } else if (piximg1->d == 8) {
-        pixd1 = pixConvertTo8(pixd, FALSE);
+        pixgrf1 = pixConvertTo8(pixgrf, FALSE);
     } else {
-        pixd1 = pixClone(pixd);
+        pixgrf1 = pixClone(pixgrf);
     }
-    pixDestroy(&pixd);
+    pixDestroy(&pixgrf);
 
     if (verbose) {
-        pixInfo(pixd1, "binary mask image:");
+        pixInfo(pixgrf1, "binary mask image:");
         pixInfo(piximg1, "   graphics image:");
     }
-    if (false) { // !@#$
-        pixRasteropFullImage(pixd1, piximg1, PIX_SRC | PIX_DST);
+    if (true) { // !@#$
+        pixRasteropFullImage(pixgrf1, piximg1, PIX_SRC | PIX_DST);
     } else {
         static const char *segment_close_sequence = "e3.3";
-        PIX *pixbc = pixMorphSequence(pixb, (char *)segment_close_sequence, 0);
+        PIX *pixbc = pixMorphSequence(pixbin, (char *)segment_close_sequence, 0);
         dumpPix(pixbc, "pixbc.segment", pageno);
 
         PIX *pixb1;
@@ -269,17 +279,17 @@ segment_image(PIX *pixb, PIX *piximg, int pageno) {
         pixInfo(pixb1, "pixb1 (before):");
         // pixRasteropFullImage(pixb1, piximg1, PIX_NOT(PIX_XOR));
         pixRasteropFullImage(pixb1, piximg1, PIX_SRC | PIX_DST);
-        pixDestroy(&pixd1);
-        pixd1 = pixb1;
+        pixDestroy(&pixgrf1);
+        pixgrf1 = pixb1;
     }
 
     pixDestroy(&piximg1);
     if (verbose) {
-        pixInfo(pixb, "segmented binary text image:");
-        pixInfo(pixd1, "segmented    graphics image:");
+        pixInfo(pixbin, "segmented binary text image:");
+        pixInfo(pixgrf1, "segmented    graphics image:");
     }
 
-    return pixd1;
+    return pixgrf1;
 }
 
 
@@ -448,7 +458,7 @@ main(int argc, char **argv) {
     while (i < argc) {
         if (pageno >= 0) {
             // break;
-            int ticks = 3;
+            int ticks = 1;
             fprintf(stderr, "sleeping for %d - ", ticks);
             for (int k = 0; k < ticks; k++) {
                 sleep(1);
